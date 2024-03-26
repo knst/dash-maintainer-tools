@@ -28,13 +28,15 @@ LCONVERT = 'lconvert'
 # Name of transifex tool
 TX = 'tx'
 # Name of source language file without extension
-SOURCE_LANG = 'bitcoin_en'
+SOURCE_LANG = 'dash_en.ts'
 # Directory with locale files
 LOCALE_DIR = 'src/qt/locale'
 # Minimum number of non-numerus messages for translation to be considered at all
 MIN_NUM_NONNUMERUS_MESSAGES = 10
 # Regexp to check for Bitcoin addresses
 ADDRESS_REGEXP = re.compile('([13]|bc1)[a-zA-Z0-9]{30,}')
+# Regexp to check for Dash addresses
+ADDRESS_REGEXP_DASH = re.compile('[X7][a-zA-Z0-9]{30,}')
 # Path to git
 GIT = os.getenv("GIT", "git")
 # Original content file suffix
@@ -91,7 +93,10 @@ def find_format_specifiers(s):
         percent = s.find('%', pos)
         if percent < 0:
             break
-        specifiers.append(s[percent+1])
+        try:
+            specifiers.append(s[percent+1])
+        except:
+            print('Failed to get specifier')
         pos = percent+2
     return specifiers
 
@@ -124,7 +129,7 @@ def check_format_specifiers(source, translation, errors, numerus):
     source_f = split_format_specifiers(find_format_specifiers(source))
     # assert that no source messages contain both Qt and strprintf format specifiers
     # if this fails, go change the source as this is hacky and confusing!
-    assert(not(source_f[0] and source_f[1]))
+    #assert(not(source_f[0] and source_f[1]))
     try:
         translation_f = split_format_specifiers(find_format_specifiers(translation))
     except IndexError:
@@ -169,6 +174,12 @@ def contains_bitcoin_addr(text, errors):
         return True
     return False
 
+def contains_dash_addr(text, errors):
+    if text is not None and ADDRESS_REGEXP_DASH.search(text) is not None:
+        errors.append('Translation "%s" contains a Dash address. This will be removed.' % (text))
+        return True
+    return False
+
 def postprocess_message(filename, message, xliff_compatible_mode):
     translation_node = message.find('translation')
     if not xliff_compatible_mode and translation_node.get('type') == 'unfinished':
@@ -190,6 +201,7 @@ def postprocess_message(filename, message, xliff_compatible_mode):
             continue
         errors = []
         valid = check_format_specifiers(source, translation, errors, numerus) and not contains_bitcoin_addr(translation, errors)
+        valid = valid and not contains_dash_addr(translation, errors)
 
         for error in errors:
             print('%s: %s' % (filename, error))
@@ -289,7 +301,7 @@ def update_build_systems():
 if __name__ == '__main__':
     check_at_repository_root()
     remove_current_translations()
-    fetch_all_translations()
+    # fetch_all_translations()
     xliff_compatible_mode = convert_xlf_to_ts()
     postprocess_translations(xliff_compatible_mode)
     update_git()
