@@ -17,8 +17,7 @@ pip install Pillow
 Running
 ====
 
-./optimize-pngs.py ../bitcoin_core/src/qt/res/movies/ ../bitcoin_core/src/qt/res/icons/ ../bitcoin_core/share/pixmaps/
-
+./optimize-pngs.py ../dash_core/src/qt/res/animation/ ../dash_core/src/qt/res/icons/ ../dash_core/src/qt/res/images/ ../dash_core/share/pixmaps/
 '''
 import argparse
 import os
